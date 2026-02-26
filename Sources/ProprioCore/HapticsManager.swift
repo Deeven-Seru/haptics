@@ -32,9 +32,11 @@ public class HapticController: ObservableObject {
             if isPlayingEntrainment {
                 timer?.invalidate()
                 let interval = 60.0 / rhythmBpm
-                timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+                let newTimer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
                     self?.playSharpTick()
                 }
+                RunLoop.main.add(newTimer, forMode: .common)
+                timer = newTimer
             }
         }
     }
