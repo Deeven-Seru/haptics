@@ -752,6 +752,9 @@ struct SettingsView: View {
                 } footer: {
                     Text("Rhythmic Auditory Stimulation (RAS) delivered via wrist haptics. Adjust intensity for comfort.")
                 }
+                .onChange(of: hapticIntensity) { _, newValue in
+                    haptics.hapticIntensity = Float(newValue)
+                }
 
                 // MARK: Mode
                 Section {

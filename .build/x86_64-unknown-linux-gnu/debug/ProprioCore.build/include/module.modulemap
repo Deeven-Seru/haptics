@@ -1,0 +1,3 @@
+module ProprioCore {
+    header "/home/runner/work/proprio/proprio/.build/x86_64-unknown-linux-gnu/debug/ProprioCore.build/include/ProprioCore-Swift.h"
+}
