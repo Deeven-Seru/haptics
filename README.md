@@ -11,7 +11,7 @@ It is not a medical device; it is a **neurological anchor**. By closing the loop
 
 ---
 
-## 🔬 Core Features
+##  Core Features
 
 ### 1. Augmented Gait Stabilization (AGS)
 Leveraging **ARKit 6**, Proprio projects a high-contrast, rhythmic "Guide Path" onto the physical floor.
@@ -30,7 +30,7 @@ Uses Computer Vision to act as a biofeedback monitor.
 
 ---
 
-## 📖 User Manual
+##  User Manual
 
 ### Getting Started
 1.  **Launch Proprio:** Ensure you are in a well-lit environment.
@@ -39,12 +39,12 @@ Uses Computer Vision to act as a biofeedback monitor.
 
 ### Modes of Operation
 
-#### 🚶 Gait Assistance Mode
+####  Gait Assistance Mode
 *   **Use Case:** Walking difficulties, Freezing of Gait.
 *   **Action:** Point the camera at the floor in front of you.
 *   **Result:** A green rhythmic path appears. Step on the bars in time with the haptic pulse.
 
-#### ✋ Fine Motor Mode (Tremor)
+####  Fine Motor Mode (Tremor)
 *   **Use Case:** Writing, eating, holding objects.
 *   **Action:** Place the device on a stand facing your hands.
 *   **Result:** The HUD displays real-time tremor amplitude. Haptic feedback will provide "counter-rhythm" stability cues (experimental).
@@ -56,7 +56,7 @@ Tap the **Gear Icon** in the top right to access clinical settings:
 
 ---
 
-## 🩺 Clinical Use Cases
+##  Clinical Use Cases
 
 | Condition | Challenge | Proprio Solution |
 |-----------|-----------|------------------|
@@ -67,7 +67,7 @@ Tap the **Gear Icon** in the top right to access clinical settings:
 
 ---
 
-## 🛠 Technical Architecture
+##  Technical Architecture
 
 Built exclusively for iOS/iPadOS to leverage the full power of Apple Silicon.
 
@@ -89,7 +89,7 @@ graph TD
 
 ---
 
-## 📥 Installation
+##  Installation
 
 ### Prerequisites
 *   iOS 17.0+ or iPadOS 17.0+
@@ -109,7 +109,7 @@ graph TD
 
 ---
 
-## 🔒 Privacy & Safety
+##  Privacy & Safety
 
 *   **Zero Data Collection:** Proprio processes all video feeds locally on-device. No images or pose data are ever transmitted to the cloud.
 *   **Safety Disclaimer:** This app is a tool for **assistance**, not medical diagnosis. Always consult a neurologist for clinical treatment. Use caution when walking with AR devices.
