@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.svg" alt="Proprio Logo" width="180" height="180" />
+  <img src="logo.svg" alt="Proprio Neural Interface" width="260" height="260" />
   <h1>Proprio</h1>
   <h3>Restoring Agency through Augmented Perception.</h3>
   <br/>
