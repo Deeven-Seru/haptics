@@ -3,61 +3,88 @@ import Vision
 import ARKit
 import Combine
 
+/// Errors that can occur during motion analysis
+public enum MotionAnalysisError: Error, LocalizedError {
+    case cameraUnavailable
+    case visionRequestFailed(Error)
+    case lowConfidence
+    
+    public var errorDescription: String? {
+        switch self {
+        case .cameraUnavailable: return "Camera access is required for motion analysis."
+        case .visionRequestFailed(let error): return "Vision request failed: \(error.localizedDescription)"
+        case .lowConfidence: return "Tracking confidence too low. Please ensure good lighting and visibility."
+        }
+    }
+}
+
+/// Analyzes body pose from video frames to detect tremor and gait anomalies.
 public class MotionAnalyzer: ObservableObject {
     // Published properties for UI updates
     @Published public var tremorAmplitude: Double = 0.0
     @Published public var gaitStabilityIndex: Double = 1.0 // 1.0 = stable, < 0.8 = unstable
     @Published public var isActive: Bool = false
+    @Published public var lastError: MotionAnalysisError?
     
     // Vision request for pose detection
     private let poseRequest = VNDetectHumanBodyPoseRequest()
     
-    // Combine cancellables
-    private var cancellables = Set<AnyCancellable>()
+    // Concurrency
+    private let analysisQueue = DispatchQueue(label: "com.proprio.analysis", qos: .userInitiated)
     
-    // Historical data for variance calculation (simple buffer)
+    // Historical data for variance calculation (Ring buffer)
     private var wristPositions: [CGPoint] = []
     private let maxHistorySize = 60 // ~1 second at 60fps
     
     public init() {
         // Configure Vision request
-        // We focus on upper body for hand tremors, full body for gait
-        // For this demo, let's assume a generalized approach
+        poseRequest.usesCPUOnly = false // Use Neural Engine where possible
     }
     
     public func startAnalysis() {
-        self.isActive = true
-        // In a real app, this would hook into ARSessionDelegate or AVCaptureSession
-        print("Motion Analysis Started")
+        DispatchQueue.main.async {
+            self.isActive = true
+            self.lastError = nil
+        }
     }
     
     public func stopAnalysis() {
-        self.isActive = false
-        print("Motion Analysis Stopped")
+        DispatchQueue.main.async {
+            self.isActive = false
+        }
     }
     
-    // Called by ARSession delegate with each frame
+    /// Processes a single video frame for body pose analysis.
+    /// - Parameter pixelBuffer: The video frame buffer.
     public func processFrame(_ pixelBuffer: CVPixelBuffer) {
         guard isActive else { return }
         
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
-        
-        do {
-            try handler.perform([poseRequest])
+        analysisQueue.async { [weak self] in
+            guard let self = self else { return }
             
-            guard let observation = poseRequest.results?.first else { return }
+            let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
             
-            // Extract keypoints (Right Wrist for tremor demo)
-            let rightWrist = try observation.recognizedPoint(.rightWrist)
-            
-            if rightWrist.confidence > 0.3 {
-                // Normalize coordinates and store
-                let point = CGPoint(x: rightWrist.location.x, y: rightWrist.location.y)
-                updateTremorMetrics(point)
+            do {
+                try handler.perform([self.poseRequest])
+                
+                guard let observation = self.poseRequest.results?.first else { return }
+                
+                // Extract keypoints (Right Wrist for tremor demo)
+                let rightWrist = try observation.recognizedPoint(.rightWrist)
+                
+                if rightWrist.confidence > 0.3 {
+                    // Normalize coordinates and store
+                    let point = CGPoint(x: rightWrist.location.x, y: rightWrist.location.y)
+                    self.updateTremorMetrics(point)
+                } else {
+                    // Optional: Report low confidence if persistent, but avoid spamming UI
+                }
+                
+            } catch {
+                DispatchQueue.main.async {
+                    self.lastError = .visionRequestFailed(error)
+                }
             }
-            
-        } catch {
-            print("Vision error: \(error)")
         }
     }
     
@@ -67,14 +94,30 @@ public class MotionAnalyzer: ObservableObject {
             wristPositions.removeFirst()
         }
         
-        // Simple variance calculation (X-axis tremor)
+        // Calculate variance (Tremor Amplitude)
+        // We look at the magnitude of deviation from the moving average
+        
         let xValues = wristPositions.map { $0.x }
-        let mean = xValues.reduce(0, +) / Double(xValues.count)
-        let variance = xValues.map { pow($0 - mean, 2) }.reduce(0, +) / Double(xValues.count)
+        let yValues = wristPositions.map { $0.y }
+        
+        let meanX = xValues.reduce(0, +) / Double(xValues.count)
+        let meanY = yValues.reduce(0, +) / Double(yValues.count)
+        
+        let varianceX = xValues.map { pow($0 - meanX, 2) }.reduce(0, +) / Double(xValues.count)
+        let varianceY = yValues.map { pow($0 - meanY, 2) }.reduce(0, +) / Double(yValues.count)
+        
+        let totalVariance = sqrt(varianceX + varianceY)
+        
+        // Normalize for UI (heuristic scaling)
+        let normalizedAmplitude = min(totalVariance * 500, 1.0)
+        
+        // Gait Stability simulation (in real app, this would analyze leg keypoints)
+        // For demo, we inversely correlate with tremor
+        let simulatedStability = max(1.0 - (normalizedAmplitude * 0.5), 0.0)
         
         DispatchQueue.main.async {
-            // Scale variance to a 0-1 amplitude for UI/Haptics
-            self.tremorAmplitude = min(sqrt(variance) * 100, 1.0) 
+            self.tremorAmplitude = normalizedAmplitude
+            self.gaitStabilityIndex = simulatedStability
         }
     }
 }
