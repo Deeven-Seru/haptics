@@ -20,8 +20,6 @@ public struct ContentView: View {
                             DispatchQueue.main.async {
                                 motionAnalyzer.startAnalysis()
                             }
-                        } else {
-                            // Handle Permission Denied (UI Alert needed)
                         }
                     }
                 }
@@ -33,44 +31,43 @@ public struct ContentView: View {
                     StatusIndicator(isActive: motionAnalyzer.isActive)
                     Spacer()
                     Button(action: { showingSettings.toggle() }) {
-                        Image(systemName: "gear")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                            .padding(12)
-                            .background(.ultraThinMaterial)
+                        Image(systemName: "gearshape.fill") // SF Symbol: gearshape.fill
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white.opacity(0.9))
+                            .padding(10)
+                            .background(.regularMaterial) // Apple Material
                             .clipShape(Circle())
                     }
                 }
-                .padding()
-                .padding(.top, 40)
+                .padding(.horizontal, 20)
+                .padding(.top, 50) // Safe area adjustment
                 
                 Spacer()
                 
                 // Real-time Biofeedback Metrics
-                HStack(spacing: 20) {
+                HStack(spacing: 16) {
                     MetricCard(
+                        icon: "waveform.path.ecg", // SF Symbol: waveform.path.ecg
                         title: "TREMOR",
-                        value: String(format: "%.1f", motionAnalyzer.tremorAmplitude * 100), // Scale to %
+                        value: String(format: "%.1f", motionAnalyzer.tremorAmplitude * 100),
                         unit: "%",
-                        color: motionAnalyzer.tremorAmplitude > 0.5 ? .red : .green
+                        state: motionAnalyzer.tremorAmplitude > 0.5 ? .critical : .normal
                     )
                     
-                    Divider()
-                        .frame(height: 50)
-                        .background(Color.white.opacity(0.3))
-                    
                     MetricCard(
-                        title: "STABILITY",
+                        icon: "figure.walk", // SF Symbol: figure.walk
+                        title: "GAIT",
                         value: String(format: "%.0f", motionAnalyzer.gaitStabilityIndex * 100),
                         unit: "%",
-                        color: motionAnalyzer.gaitStabilityIndex < 0.8 ? .yellow : .green
+                        state: motionAnalyzer.gaitStabilityIndex < 0.8 ? .warning : .normal
                     )
                 }
-                .padding(24)
+                .padding(20)
                 .background(.ultraThinMaterial)
-                .cornerRadius(24)
-                .shadow(radius: 20)
-                .padding(.bottom, 60)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous)) // Continuous curves (Apple style)
+                .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: 10)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -80,31 +77,57 @@ public struct ContentView: View {
     }
 }
 
+// Semantic State for coloring
+enum MetricState {
+    case normal
+    case warning
+    case critical
+    
+    var color: Color {
+        switch self {
+        case .normal: return Color.green
+        case .warning: return Color.yellow
+        case .critical: return Color.red
+        }
+    }
+}
+
 struct MetricCard: View {
+    let icon: String
     let title: String
     let value: String
     let unit: String
-    let color: Color
+    let state: MetricState
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption2)
-                .fontWeight(.bold)
-                .foregroundColor(.white.opacity(0.6))
-                .kerning(1.2)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(state.color)
+                
+                Spacer()
+                
+                Text(title)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.secondary)
+                    .kerning(1.0)
+            }
             
-            HStack(alignment: .lastTextBaseline, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(value)
-                    .font(.system(size: 44, weight: .heavy, design: .rounded))
-                    .foregroundColor(color)
+                    .font(.system(size: 34, weight: .medium, design: .rounded)) // Rounded design
+                    .foregroundColor(.primary)
+                
                 Text(unit)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white.opacity(0.6))
-                    .offset(y: -4)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.secondary)
             }
         }
+        .padding(16)
+        .background(Color(UIColor.systemBackground).opacity(0.1)) // Subtle tint
+        .cornerRadius(16)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -113,21 +136,19 @@ struct StatusIndicator: View {
     
     var body: some View {
         HStack(spacing: 8) {
-            Circle()
-                .fill(isActive ? Color.green : Color.red)
-                .frame(width: 8, height: 8)
-                .shadow(color: isActive ? .green : .red, radius: 4)
+            Image(systemName: isActive ? "bolt.horizontal.fill" : "pause.fill") // SF Symbols only
+                .font(.system(size: 10, weight: .black))
+                .foregroundColor(isActive ? .green : .orange)
             
-            Text(isActive ? "MONITORING ACTIVE" : "PAUSED")
-                .font(.caption2)
-                .fontWeight(.bold)
-                .foregroundColor(.white.opacity(0.8))
-                .kerning(1.0)
+            Text(isActive ? "ACTIVE MONITORING" : "PAUSED")
+                .font(.system(size: 11, weight: .bold, design: .default))
+                .foregroundColor(.white.opacity(0.9))
+                .kerning(0.5)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
-        .cornerRadius(20)
+        .background(.thickMaterial)
+        .clipShape(Capsule())
     }
 }
 
@@ -136,36 +157,51 @@ struct SettingsView: View {
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Haptic Entrainment")) {
-                    Toggle("Enable Rhythmic Stimulation", isOn: Binding(
+        NavigationStack {
+            List {
+                Section {
+                    Toggle(isOn: Binding(
                         get: { haptics.isPlayingEntrainment },
                         set: { if $0 { haptics.playGaitEntrainment() } else { haptics.stopEntrainment() } }
-                    ))
+                    )) {
+                        Label("Rhythmic Stimulation", systemImage: "metronome")
+                    }
                     
                     if haptics.isPlayingEntrainment {
-                        Stepper(value: $haptics.rhythmBpm, in: 40...120, step: 5) {
+                        VStack(alignment: .leading) {
                             HStack {
-                                Text("Tempo")
+                                Label("Tempo", systemImage: "speedometer")
                                 Spacer()
                                 Text("\(Int(haptics.rhythmBpm)) BPM")
-                                    .foregroundColor(.gray)
+                                    .foregroundStyle(.secondary)
+                                    .font(.system(.body, design: .monospaced))
                             }
+                            Slider(value: $haptics.rhythmBpm, in: 40...120, step: 5)
                         }
                     }
+                } header: {
+                    Text("Haptics")
+                } footer: {
+                    Text("Rhythmic Auditory Stimulation (RAS) delivered via wrist haptics.")
                 }
                 
-                Section(header: Text("Calibration")) {
-                    Button("Recalibrate Sensors") {
-                        // Placeholder for calibration logic
+                Section {
+                    Button(role: .destructive) {
+                        // Placeholder
+                    } label: {
+                        Label("Reset Calibration", systemImage: "arrow.counterclockwise")
                     }
                 }
             }
             .navigationTitle("Settings")
-            .navigationBarItems(trailing: Button("Done") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
         }
     }
 }
