@@ -103,8 +103,9 @@ public class MotionAnalyzer: ObservableObject {
         let meanX = xValues.reduce(0, +) / Double(xValues.count)
         let meanY = yValues.reduce(0, +) / Double(yValues.count)
         
-        let varianceX = xValues.map { pow($0 - meanX, 2) }.reduce(0, +) / Double(xValues.count)
-        let varianceY = yValues.map { pow($0 - meanY, 2) }.reduce(0, +) / Double(yValues.count)
+        // Use Foundation.pow for explicit Double calculation to avoid CoreGraphics ambiguity
+        let varianceX = xValues.map { Foundation.pow($0 - meanX, 2) }.reduce(0, +) / Double(xValues.count)
+        let varianceY = yValues.map { Foundation.pow($0 - meanY, 2) }.reduce(0, +) / Double(yValues.count)
         
         let totalVariance = sqrt(varianceX + varianceY)
         
